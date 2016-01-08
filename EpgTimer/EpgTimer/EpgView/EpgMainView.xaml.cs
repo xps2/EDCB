@@ -48,12 +48,6 @@ namespace EpgTimer
         {
             InitializeComponent();
 
-            if (Settings.Instance.NoStyle == 1)
-            {
-                button_now.Style = null;
-
-            }
-
             epgProgramView.PreviewMouseWheel += new MouseWheelEventHandler(epgProgramView_PreviewMouseWheel);
             epgProgramView.ScrollChanged += new ScrollChangedEventHandler(epgProgramView_ScrollChanged);
             epgProgramView.LeftDoubleClick += new ProgramView.ProgramViewClickHandler(epgProgramView_LeftDoubleClick);
@@ -1529,6 +1523,9 @@ namespace EpgTimer
 
                 //必要番組の抽出と時間チェック
                 List<EpgServiceInfo> primeServiceList = new List<EpgServiceInfo>();
+                //番組表でまとめて描画する矩形の幅と番組集合のリスト
+                var programGroupList = new List<Tuple<double, List<ProgramViewItem>>>();
+                int groupSpan = 1;
                 int mergePos = 0;
                 int mergeNum = 0;
                 int servicePos = -1;
@@ -1565,6 +1562,11 @@ namespace EpgTimer
                             }
                             curr = next;
                         }
+                        if (--groupSpan <= 0)
+                        {
+                            groupSpan = spanCheckNum;
+                            programGroupList.Add(new Tuple<double, List<ProgramViewItem>>(Settings.Instance.ServiceWidth * groupSpan, new List<ProgramViewItem>()));
+                        }
                         primeServiceList.Add(serviceList[mergePos]);
                     }
 
@@ -1581,9 +1583,13 @@ namespace EpgTimer
                         if (this.viewCustContentKindList.Count > 0)
                         {
                             bool find = false;
-                            if (eventInfo.ContentInfo != null)
+                            if (eventInfo.ContentInfo == null || eventInfo.ContentInfo.nibbleList.Count == 0)
                             {
-                                if (eventInfo.ContentInfo.nibbleList.Count > 0)
+                                //ジャンル情報ない
+                                find = this.viewCustContentKindList.ContainsKey(0xFFFF);
+                            }
+                            else
+                            {
                                 {
                                     foreach (EpgContentData contentInfo in eventInfo.ContentInfo.nibbleList)
                                     {
@@ -1661,6 +1667,7 @@ namespace EpgTimer
                         viewItem.Width = Settings.Instance.ServiceWidth * widthSpan / mergeNum;
                         viewItem.LeftPos = Settings.Instance.ServiceWidth * (servicePos + (double)((mergeNum+i-mergePos-1)/2) / mergeNum);
                         //viewItem.TopPos = (eventInfo.start_time - startTime).TotalMinutes * Settings.Instance.MinHeight;
+                        programGroupList[programGroupList.Count - 1].Item2.Add(viewItem);
                         programList.Add(viewItem);
 
                         //日付チェック
@@ -1759,8 +1766,7 @@ namespace EpgTimer
                 }
 
                 epgProgramView.SetProgramList(
-                    programList,
-                    primeServiceList.Count() * Settings.Instance.ServiceWidth,
+                    programGroupList,
                     timeList.Count * 60 * Settings.Instance.MinHeight);
 
                 List<DateTime> dateTimeList = new List<DateTime>();
@@ -1842,6 +1848,9 @@ namespace EpgTimer
 
                 //必要番組の抽出と時間チェック
                 List<EpgServiceInfo> primeServiceList = new List<EpgServiceInfo>();
+                //番組表でまとめて描画する矩形の幅と番組集合のリスト
+                var programGroupList = new List<Tuple<double, List<ProgramViewItem>>>();
+                int groupSpan = 1;
                 int mergePos = 0;
                 int mergeNum = 0;
                 int servicePos = -1;
@@ -1878,6 +1887,11 @@ namespace EpgTimer
                             }
                             curr = next;
                         }
+                        if (--groupSpan <= 0)
+                        {
+                            groupSpan = spanCheckNum;
+                            programGroupList.Add(new Tuple<double, List<ProgramViewItem>>(Settings.Instance.ServiceWidth * groupSpan, new List<ProgramViewItem>()));
+                        }
                         primeServiceList.Add(serviceList[mergePos]);
                     }
 
@@ -1894,9 +1908,13 @@ namespace EpgTimer
                         if (this.viewCustContentKindList.Count > 0)
                         {
                             bool find = false;
-                            if (eventInfo.ContentInfo != null)
+                            if (eventInfo.ContentInfo == null || eventInfo.ContentInfo.nibbleList.Count == 0)
                             {
-                                if (eventInfo.ContentInfo.nibbleList.Count > 0)
+                                //ジャンル情報ない
+                                find = this.viewCustContentKindList.ContainsKey(0xFFFF);
+                            }
+                            else
+                            {
                                 {
                                     foreach (EpgContentData contentInfo in eventInfo.ContentInfo.nibbleList)
                                     {
@@ -1974,6 +1992,7 @@ namespace EpgTimer
                         viewItem.Width = Settings.Instance.ServiceWidth * widthSpan / mergeNum;
                         viewItem.LeftPos = Settings.Instance.ServiceWidth * (servicePos + (double)((mergeNum+i-mergePos-1)/2) / mergeNum);
                         //viewItem.TopPos = (eventInfo.start_time - startTime).TotalMinutes * Settings.Instance.MinHeight;
+                        programGroupList[programGroupList.Count - 1].Item2.Add(viewItem);
                         programList.Add(viewItem);
 
                         //日付チェック
@@ -2072,8 +2091,7 @@ namespace EpgTimer
                 }
 
                 epgProgramView.SetProgramList(
-                    programList,
-                    primeServiceList.Count() * Settings.Instance.ServiceWidth,
+                    programGroupList,
                     timeList.Count * 60 * Settings.Instance.MinHeight);
 
                 List<DateTime> dateTimeList = new List<DateTime>();

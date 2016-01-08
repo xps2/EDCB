@@ -49,12 +49,6 @@ namespace EpgTimer
         {
             InitializeComponent();
 
-            if (Settings.Instance.NoStyle == 1)
-            {
-                button_now.Style = null;
-
-            }
-
             epgProgramView.PreviewMouseWheel += new MouseWheelEventHandler(epgProgramView_PreviewMouseWheel);
             epgProgramView.ScrollChanged += new ScrollChangedEventHandler(epgProgramView_ScrollChanged);
             epgProgramView.LeftDoubleClick += new ProgramView.ProgramViewClickHandler(epgProgramView_LeftDoubleClick);
@@ -1637,9 +1631,13 @@ namespace EpgTimer
                     if (this.viewCustContentKindList.Count > 0)
                     {
                         bool find = false;
-                        if (eventInfo.ContentInfo != null)
+                        if (eventInfo.ContentInfo == null || eventInfo.ContentInfo.nibbleList.Count == 0)
                         {
-                            if (eventInfo.ContentInfo.nibbleList.Count > 0)
+                            //ジャンル情報ない
+                            find = this.viewCustContentKindList.ContainsKey(0xFFFF);
+                        }
+                        else
+                        {
                             {
                                 foreach (EpgContentData contentInfo in eventInfo.ContentInfo.nibbleList)
                                 {
