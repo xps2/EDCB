@@ -12,8 +12,6 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Threading; //紅
-using System.Windows.Interop; //紅
-using System.Runtime.InteropServices; //紅
 
 namespace EpgTimer
 {
@@ -43,26 +41,13 @@ namespace EpgTimer
         {
             string appName = System.IO.Path.GetFileNameWithoutExtension(System.Reflection.Assembly.GetEntryAssembly().Location);
             CommonManager.Instance.NWMode = appName.StartsWith("EpgTimerNW", StringComparison.OrdinalIgnoreCase);
-            //CommonManager.Instance.NWMode = true;
 
+            Settings.LoadFromXmlFile(CommonManager.Instance.NWMode);
             if (CommonManager.Instance.NWMode == true)
             {
-                Settings.LoadFromXmlFileNW();
                 CommonManager.Instance.DB.SetNoAutoReloadEPG(Settings.Instance.NgAutoEpgLoadNW);
                 cmd.SetSendMode(true);
-                cmd.SetNWSetting("", Settings.Instance.NWServerPort);
-            }
-            else
-            {
-                Settings.LoadFromXmlFile();
-                try
-                {
-                    using (var sr = new System.IO.StreamReader(SettingPath.SettingFolderPath + "\\ChSet5.txt", Encoding.Default))
-                    {
-                        ChSet5.Load(sr);
-                    }
-                }
-                catch { }
+                cmd.SetNWSetting(null, 0);
             }
             CommonManager.Instance.ReloadCustContentColorList();
 
@@ -282,8 +267,17 @@ namespace EpgTimer
                     pipeEventName += System.Diagnostics.Process.GetCurrentProcess().Id.ToString();
                     pipeServer.StartServer(pipeEventName, pipeName, (c, r) => OutsideCmdCallback(c, r, false));
 
-                    for (int i = 0; i < 150 && cmd.SendRegistGUI((uint)System.Diagnostics.Process.GetCurrentProcess().Id) != ErrCode.CMD_SUCCESS; i++)
+                    for (int i = 0; i < 150; i++)
                     {
+                        if (cmd.SendRegistGUI((uint)System.Diagnostics.Process.GetCurrentProcess().Id) == ErrCode.CMD_SUCCESS)
+                        {
+                            byte[] binData;
+                            if (cmd.SendFileCopy("ChSet5.txt", out binData) == ErrCode.CMD_SUCCESS)
+                            {
+                                ChSet5.Load(new System.IO.StreamReader(new System.IO.MemoryStream(binData), Encoding.GetEncoding(932)));
+                            }
+                            break;
+                        }
                         Thread.Sleep(100);
                     }
                 }
@@ -326,21 +320,6 @@ namespace EpgTimer
                 if (string.Compare(ext, ".exe", true) == 0)
                 {
                     //何もしない
-                }
-                else if (string.Compare(ext, ".eaa", true) == 0)
-                {
-                    //自動予約登録条件追加
-                    EAAFileClass eaaFile = new EAAFileClass();
-                    if (eaaFile.LoadEAAFile(arg) == true)
-                    {
-                        List<EpgAutoAddData> val = new List<EpgAutoAddData>();
-                        val.Add(eaaFile.AddKey);
-                        cmd.SendAddEpgAutoAdd(val);
-                    }
-                    else
-                    {
-                        MessageBox.Show("解析に失敗しました。");
-                    }
                 }
                 else if (string.Compare(ext, ".tvpid", true) == 0 || string.Compare(ext, ".tvpio", true) == 0)
                 {
@@ -541,9 +520,7 @@ namespace EpgTimer
             byte[] binData;
             if (cmd.SendFileCopy("ChSet5.txt", out binData) == ErrCode.CMD_SUCCESS)
             {
-                string filePath = SettingPath.SettingFolderPath;
-                System.IO.Directory.CreateDirectory(filePath);
-                ChSet5.Load(new System.IO.StreamReader(new System.IO.MemoryStream(binData), Encoding.Default));
+                ChSet5.Load(new System.IO.StreamReader(new System.IO.MemoryStream(binData), Encoding.GetEncoding(932)));
             }
             CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.ReserveInfo);
             CommonManager.Instance.DB.SetUpdateNotify((UInt32)UpdateNotifyItem.RecInfo);
@@ -685,22 +662,7 @@ namespace EpgTimer
             foreach (string path in filePath)
             {
                 String ext = System.IO.Path.GetExtension(path);
-                if (string.Compare(ext, ".eaa", true) == 0)
-                {
-                    //自動予約登録条件追加
-                    EAAFileClass eaaFile = new EAAFileClass();
-                    if (eaaFile.LoadEAAFile(path) == true)
-                    {
-                        List<EpgAutoAddData> val = new List<EpgAutoAddData>();
-                        val.Add(eaaFile.AddKey);
-                        cmd.SendAddEpgAutoAdd(val);
-                    }
-                    else
-                    {
-                        MessageBox.Show("解析に失敗しました。");
-                    }
-                }
-                else if (string.Compare(ext, ".tvpid", true) == 0 || string.Compare(ext, ".tvpio", true) == 0)
+                if (string.Compare(ext, ".tvpid", true) == 0 || string.Compare(ext, ".tvpio", true) == 0)
                 {
                     //iEPG追加
                     IEPGFileClass iepgFile = new IEPGFileClass();
@@ -806,21 +768,9 @@ namespace EpgTimer
                         CommonManager.Instance.DB.SetNoAutoReloadEPG(Settings.Instance.NgAutoEpgLoadNW);
                     }
                     epgView.UpdateSetting();
-                    cmd.SendReloadSetting();
                     ResetButtonView();
                     ResetTaskMenu();
                 }
-            }
-            if (CommonManager.Instance.NWMode == false)
-            {
-                try
-                {
-                    using (var sr = new System.IO.StreamReader(SettingPath.SettingFolderPath + "\\ChSet5.txt", Encoding.Default))
-                    {
-                        ChSet5.Load(sr);
-                    }
-                }
-                catch { }
             }
         }
 
@@ -1231,39 +1181,13 @@ namespace EpgTimer
             }
         }
 
-        internal struct LASTINPUTINFO
-        {
-            public uint cbSize;
-            public uint dwTime;
-        }
-
-        [DllImport("User32.dll")]
-        private static extern bool GetLastInputInfo(ref LASTINPUTINFO plii);
-
-        [DllImport("Kernel32.dll")]
-        public static extern UInt32 GetTickCount();
-
         private void ShowSleepDialog(UInt16 param)
         {
-            LASTINPUTINFO info = new LASTINPUTINFO();
-            info.cbSize = (uint)System.Runtime.InteropServices.Marshal.SizeOf(info);
-            GetLastInputInfo(ref info);
-
-            // 現在時刻取得
-            UInt64 dwNow = GetTickCount();
-
-            // GetTickCount()は49.7日周期でリセットされるので桁上りさせる
-            if (info.dwTime > dwNow)
-            {
-                dwNow += 0x100000000;
-            }
-
             if (IniFileHandler.GetPrivateProfileInt("NO_SUSPEND", "NoUsePC", 0, SettingPath.TimerSrvIniPath) == 1)
             {
-                UInt32 ngUsePCTime = (UInt32)IniFileHandler.GetPrivateProfileInt("NO_SUSPEND", "NoUsePCTime", 3, SettingPath.TimerSrvIniPath);
-                UInt32 threshold = ngUsePCTime * 60 * 1000;
+                int ngUsePCTime = IniFileHandler.GetPrivateProfileInt("NO_SUSPEND", "NoUsePCTime", 3, SettingPath.TimerSrvIniPath);
 
-                if (ngUsePCTime == 0 || dwNow - info.dwTime < threshold)
+                if (ngUsePCTime == 0 || CommonUtil.GetIdleTimeSec() < ngUsePCTime * 60)
                 {
                     return;
                 }
