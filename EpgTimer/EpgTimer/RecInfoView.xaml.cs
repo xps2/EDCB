@@ -31,8 +31,6 @@ namespace EpgTimer
         private string _lastHeaderClicked2 = null;
         private ListSortDirection _lastDirection2 = ListSortDirection.Ascending;
 
-        private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
-
         private bool ReloadInfo = true;
 
         public RecInfoView()
@@ -135,7 +133,7 @@ namespace EpgTimer
                     {
                         IDList.Add(info.RecInfo.ID);
                     }
-                    cmd.SendDelRecInfo(IDList);
+                    CommonManager.CreateSrvCtrl().SendDelRecInfo(IDList);
                 }
             }
             catch (Exception ex)
@@ -224,27 +222,11 @@ namespace EpgTimer
                 resultList.Clear();
 
                 ErrCode err = CommonManager.Instance.DB.ReloadrecFileInfo();
-                if (err == ErrCode.CMD_ERR_CONNECT)
-                {
-                    this.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                    }), null);
-                    return false;
-                }
-                if (err == ErrCode.CMD_ERR_TIMEOUT)
-                {
-                    this.Dispatcher.BeginInvoke(new Action(() =>
-                    {
-                        MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                    }), null);
-                    return false;
-                }
                 if (err != ErrCode.CMD_SUCCESS)
                 {
                     this.Dispatcher.BeginInvoke(new Action(() =>
                     {
-                        MessageBox.Show("情報の取得でエラーが発生しました。");
+                        MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "情報の取得でエラーが発生しました。");
                     }), null);
                     return false;
                 }
@@ -335,7 +317,7 @@ namespace EpgTimer
                     RecInfoDescWindow dlg = new RecInfoDescWindow();
                     dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
                     RecFileInfo extraRecInfo = new RecFileInfo();
-                    if (cmd.SendGetRecInfo(info.RecInfo.ID, ref extraRecInfo) == ErrCode.CMD_SUCCESS)
+                    if (CommonManager.CreateSrvCtrl().SendGetRecInfo(info.RecInfo.ID, ref extraRecInfo) == ErrCode.CMD_SUCCESS)
                     {
                         info.RecInfo.ProgramInfo = extraRecInfo.ProgramInfo;
                         info.RecInfo.ErrInfo = extraRecInfo.ErrInfo;
@@ -420,7 +402,7 @@ namespace EpgTimer
                 RecInfoDescWindow dlg = new RecInfoDescWindow();
                 dlg.Owner = (Window)PresentationSource.FromVisual(this).RootVisual;
                 RecFileInfo extraRecInfo = new RecFileInfo();
-                if (cmd.SendGetRecInfo(info.RecInfo.ID, ref extraRecInfo) == ErrCode.CMD_SUCCESS)
+                if (CommonManager.CreateSrvCtrl().SendGetRecInfo(info.RecInfo.ID, ref extraRecInfo) == ErrCode.CMD_SUCCESS)
                 {
                     info.RecInfo.ProgramInfo = extraRecInfo.ProgramInfo;
                     info.RecInfo.ErrInfo = extraRecInfo.ErrInfo;

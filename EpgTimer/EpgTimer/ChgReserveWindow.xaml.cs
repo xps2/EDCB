@@ -21,7 +21,6 @@ namespace EpgTimer
     public partial class ChgReserveWindow : Window
     {
         private ReserveData reserveInfo = null;
-        private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
         private bool manualAddMode = false;
 
         public ChgReserveWindow()
@@ -124,7 +123,7 @@ namespace EpgTimer
                     {
                         UInt64 pgId = CommonManager.Create64PgKey(info.OriginalNetworkID, info.TransportStreamID, info.ServiceID, info.EventID);
                         eventInfo = new EpgEventInfo();
-                        cmd.SendGetPgInfo(pgId, ref eventInfo);
+                        CommonManager.CreateSrvCtrl().SendGetPgInfo(pgId, ref eventInfo);
                     }
                     if (eventInfo != null)
                     {
@@ -330,35 +329,19 @@ namespace EpgTimer
             list.Add(reserveInfo);
             if (manualAddMode == false)
             {
-                ErrCode err = (ErrCode)cmd.SendChgReserve(list);
-                if (err == ErrCode.CMD_ERR_CONNECT)
-                {
-                    MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                }
-                if (err == ErrCode.CMD_ERR_TIMEOUT)
-                {
-                    MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                }
+                ErrCode err = CommonManager.CreateSrvCtrl().SendChgReserve(list);
                 if (err != ErrCode.CMD_SUCCESS)
                 {
-                    MessageBox.Show("予約変更でエラーが発生しました。");
+                    MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約変更でエラーが発生しました。");
                 }
             }
             else
             {
                 reserveInfo.StartTimeEpg = reserveInfo.StartTime;
-                ErrCode err = (ErrCode)cmd.SendAddReserve(list);
-                if (err == ErrCode.CMD_ERR_CONNECT)
-                {
-                    MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                }
-                if (err == ErrCode.CMD_ERR_TIMEOUT)
-                {
-                    MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                }
+                ErrCode err = CommonManager.CreateSrvCtrl().SendAddReserve(list);
                 if (err != ErrCode.CMD_SUCCESS)
                 {
-                    MessageBox.Show("予約追加でエラーが発生しました。");
+                    MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約追加でエラーが発生しました。");
                 }
             }
             if (this.Visibility == System.Windows.Visibility.Visible)
@@ -371,20 +354,11 @@ namespace EpgTimer
         {
             List<UInt32> list = new List<UInt32>();
             list.Add(reserveInfo.ReserveID);
-            ErrCode err = (ErrCode)cmd.SendDelReserve(list);
-            if (err == ErrCode.CMD_ERR_CONNECT)
-            {
-                MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-            }
-            if (err == ErrCode.CMD_ERR_TIMEOUT)
-            {
-                MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-            }
+            ErrCode err = CommonManager.CreateSrvCtrl().SendDelReserve(list);
             if (err != ErrCode.CMD_SUCCESS)
             {
-                MessageBox.Show("予約削除でエラーが発生しました。");
+                MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約削除でエラーが発生しました。");
             }
-
             DialogResult = true;
         }
 
