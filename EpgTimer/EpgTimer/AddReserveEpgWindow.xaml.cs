@@ -21,7 +21,6 @@ namespace EpgTimer
     public partial class AddReserveEpgWindow : Window
     {
         private EpgEventInfo eventInfo = null;
-        private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
 
         public AddReserveEpgWindow()
         {
@@ -165,18 +164,10 @@ namespace EpgTimer
 
                 List<ReserveData> list = new List<ReserveData>();
                 list.Add(reserveInfo);
-                ErrCode err = (ErrCode)cmd.SendAddReserve(list);
-                if (err == ErrCode.CMD_ERR_CONNECT)
-                {
-                    MessageBox.Show("サーバー または EpgTimerSrv に接続できませんでした。");
-                }
-                if (err == ErrCode.CMD_ERR_TIMEOUT)
-                {
-                    MessageBox.Show("EpgTimerSrvとの接続にタイムアウトしました。");
-                }
+                ErrCode err = CommonManager.CreateSrvCtrl().SendAddReserve(list);
                 if (err != ErrCode.CMD_SUCCESS)
                 {
-                    MessageBox.Show("予約登録でエラーが発生しました。終了時間がすでに過ぎている可能性があります。");
+                    MessageBox.Show(CommonManager.GetErrCodeText(err) ?? "予約登録でエラーが発生しました。終了時間がすでに過ぎている可能性があります。");
                 }
             }
             catch (Exception ex)

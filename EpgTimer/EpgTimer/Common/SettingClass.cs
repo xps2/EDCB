@@ -57,24 +57,25 @@ namespace EpgTimer
         {
             get
             {
-                string iniPath = ModulePath.TrimEnd('\\');
-                iniPath += "\\Common.ini";
-                return iniPath;
+                return Path.Combine(ModulePath, "Common.ini");
             }
         }
         public static string TimerSrvIniPath
         {
             get
             {
-                string iniPath = ModulePath.TrimEnd('\\');
-                iniPath += "\\EpgTimerSrv.ini";
-                return iniPath;
+                return Path.Combine(ModulePath, "EpgTimerSrv.ini");
             }
         }
         public static void CheckFolderPath(ref string folderPath)
         {
-            if( folderPath.LastIndexOf("\\") == folderPath.Length-1 ){
-                folderPath = folderPath.Remove(folderPath.Length - 1);
+            //過去にルートディレクトリ区切りを失った状態("C:"など)で設定などに保存していたので、これに対応する
+            if (folderPath.Length > 0 &&
+                folderPath[folderPath.Length - 1] != Path.DirectorySeparatorChar &&
+                folderPath[folderPath.Length - 1] != Path.AltDirectorySeparatorChar)
+            {
+                //一時的に下層を作って上がる
+                folderPath = Path.GetDirectoryName(folderPath + Path.DirectorySeparatorChar + "a") ?? folderPath;
             }
         }
         public static string ModulePath
@@ -113,7 +114,8 @@ namespace EpgTimer
         public string ReserveRectColorNo { get; set; }
         public string ReserveRectColorNoTuner { get; set; }
         public string ReserveRectColorWarning { get; set; }
-        public bool ReserveRectBackground { get; set; }
+        public int ReserveRectFillOpacity { get; set; }
+        public bool ReserveRectFillWithShadow { get; set; }
         public string TitleColor1 { get; set; }
         public string TitleColor2 { get; set; }
         public UInt32 TitleCustColor1 { get; set; }
@@ -142,6 +144,7 @@ namespace EpgTimer
         public double MainWndTop { get; set; }
         public double MainWndWidth { get; set; }
         public double MainWndHeight { get; set; }
+        public double SearchWndTabsHeight { get; set; }
         public bool CloseMin { get; set; }
         public bool WakeMin { get; set; }
         public bool ViewButtonShowAsTab { get; set; }
@@ -216,24 +219,31 @@ namespace EpgTimer
         public bool NgAutoEpgLoadNW { get; set; }
         public Int32 TvTestOpenWait { get; set; }
         public Int32 TvTestChgBonWait { get; set; }
+        public byte ResDefColorA { get; set; }
         public byte ResDefColorR { get; set; }
         public byte ResDefColorG { get; set; }
         public byte ResDefColorB { get; set; }
+        public byte ResErrColorA { get; set; }
         public byte ResErrColorR { get; set; }
         public byte ResErrColorG { get; set; }
         public byte ResErrColorB { get; set; }
+        public byte ResWarColorA { get; set; }
         public byte ResWarColorR { get; set; }
         public byte ResWarColorG { get; set; }
         public byte ResWarColorB { get; set; }
+        public byte ResNoColorA { get; set; }
         public byte ResNoColorR { get; set; }
         public byte ResNoColorG { get; set; }
         public byte ResNoColorB { get; set; }
+        public byte RecEndDefColorA { get; set; }
         public byte RecEndDefColorR { get; set; }
         public byte RecEndDefColorG { get; set; }
         public byte RecEndDefColorB { get; set; }
+        public byte RecEndErrColorA { get; set; }
         public byte RecEndErrColorR { get; set; }
         public byte RecEndErrColorG { get; set; }
         public byte RecEndErrColorB { get; set; }
+        public byte RecEndWarColorA { get; set; }
         public byte RecEndWarColorR { get; set; }
         public byte RecEndWarColorG { get; set; }
         public byte RecEndWarColorB { get; set; }
@@ -295,7 +305,8 @@ namespace EpgTimer
             TitleCustColor2 = 0xFFFFFFFF;
             ServiceColor = "LightSlateGray";
             ServiceCustColor = 0xFFFFFFFF;
-            ReserveRectBackground = false;
+            ReserveRectFillOpacity = 0;
+            ReserveRectFillWithShadow = true;
             EpgToolTip = false;
             EpgTitleIndent = true;
             EpgToolTipNoViewOnly = true;
@@ -310,6 +321,7 @@ namespace EpgTimer
             MainWndTop = -100;
             MainWndWidth = -100;
             MainWndHeight = -100;
+            SearchWndTabsHeight = 0;
             CloseMin = false;
             WakeMin = false;
             ViewButtonShowAsTab = false;
@@ -354,24 +366,31 @@ namespace EpgTimer
             NgAutoEpgLoadNW = false;
             TvTestOpenWait = 2000;
             TvTestChgBonWait = 2000;
+            ResDefColorA = 0;
             ResDefColorR = 0xFF;
             ResDefColorG = 0xFF;
             ResDefColorB = 0xFF;
+            ResErrColorA = 0x80;
             ResErrColorR = 0xFF;
             ResErrColorG = 0;
             ResErrColorB = 0;
+            ResWarColorA = 0x80;
             ResWarColorR = 0xFF;
             ResWarColorG = 0xFF;
             ResWarColorB = 0;
+            ResNoColorA = 0x80;
             ResNoColorR = 0xA9;
             ResNoColorG = 0xA9;
             ResNoColorB = 0xA9;
+            RecEndDefColorA = 0;
             RecEndDefColorR = 0xFF;
             RecEndDefColorG = 0xFF;
             RecEndDefColorB = 0xFF;
+            RecEndErrColorA = 0x80;
             RecEndErrColorR = 0xFF;
             RecEndErrColorG = 0;
             RecEndErrColorB = 0;
+            RecEndWarColorA = 0x80;
             RecEndWarColorR = 0xFF;
             RecEndWarColorG = 0xFF;
             RecEndWarColorB = 0;
