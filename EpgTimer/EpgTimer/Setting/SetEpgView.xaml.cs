@@ -72,7 +72,8 @@ namespace EpgTimer.Setting
                 comboBox_reserveNo.SelectedIndex = Math.Max(0, colorList.IndexOfKey(Settings.Instance.ReserveRectColorNo));
                 comboBox_reserveNoTuner.SelectedIndex = Math.Max(0, colorList.IndexOfKey(Settings.Instance.ReserveRectColorNoTuner));
                 comboBox_reserveWarning.SelectedIndex = Math.Max(0, colorList.IndexOfKey(Settings.Instance.ReserveRectColorWarning));
-                checkBox_reserveBackground.IsChecked = Settings.Instance.ReserveRectBackground;
+                slider_reserveFillOpacity.Value = Math.Min(Math.Max(Settings.Instance.ReserveRectFillOpacity, 0), 100);
+                checkBox_reserveFillWithShadow.IsChecked = Settings.Instance.ReserveRectFillWithShadow;
 
                 comboBox_colorTitle1.SelectedIndex = Math.Max(0, colorList.IndexOfKey(Settings.Instance.TitleColor1));
                 comboBox_colorTitle2.SelectedIndex = Math.Max(0, colorList.IndexOfKey(Settings.Instance.TitleColor2));
@@ -86,25 +87,20 @@ namespace EpgTimer.Setting
                     {
                         string s = dictionary[FLanguage] as string;
                         comboBox_font.Items.Add(s);
-                        if (String.Compare(s, Settings.Instance.FontName) == 0)
-                        {
-                            comboBox_font.SelectedItem = s;
-                        }
                         comboBox_fontTitle.Items.Add(s);
-                        if (String.Compare(s, Settings.Instance.FontNameTitle) == 0)
-                        {
-                            comboBox_fontTitle.SelectedItem = s;
-                        }
                     }
                 }
-                if (comboBox_font.SelectedItem == null)
+                //ローカル名がなくても一応候補に加える
+                foreach (FontFamily family in Fonts.SystemFontFamilies)
                 {
-                    comboBox_font.SelectedIndex = 0;
+                    if (family.FamilyNames.ContainsKey(XmlLanguage.GetLanguage("ja-JP")) == false)
+                    {
+                        comboBox_font.Items.Add(family.Source);
+                        comboBox_fontTitle.Items.Add(family.Source);
+                    }
                 }
-                if (comboBox_fontTitle.SelectedItem == null)
-                {
-                    comboBox_fontTitle.SelectedIndex = 0;
-                }
+                comboBox_font.Text = Settings.Instance.FontName;
+                comboBox_fontTitle.Text = Settings.Instance.FontNameTitle;
                 textBox_fontSize.Text = Settings.Instance.FontSize.ToString();
                 textBox_fontSizeTitle.Text = Settings.Instance.FontSizeTitle.ToString();
                 checkBox_fontBoldTitle.IsChecked = Settings.Instance.FontBoldTitle;
@@ -115,6 +111,10 @@ namespace EpgTimer.Setting
                 textBox_dragScroll.Text = Settings.Instance.DragScroll.ToString();
                 textBox_minimumHeight.Text = Settings.Instance.MinimumHeight.ToString();
                 checkBox_descToolTip.IsChecked = Settings.Instance.EpgToolTip;
+                textBox_borderLeftSize.Text = Settings.Instance.EpgBorderLeftSize.ToString();
+                textBox_borderTopSize.Text = Settings.Instance.EpgBorderTopSize.ToString();
+                textBox_replacePattern.Text = Settings.Instance.EpgReplacePattern;
+                textBox_replacePatternTitle.Text = Settings.Instance.EpgReplacePatternTitle;
                 checkBox_title_indent.IsChecked = Settings.Instance.EpgTitleIndent;
                 checkBox_toolTip_noView_only.IsChecked = Settings.Instance.EpgToolTipNoViewOnly;
                 textBox_toolTipWait.Text = Settings.Instance.EpgToolTipViewWait.ToString();
@@ -192,6 +192,10 @@ namespace EpgTimer.Setting
                 Settings.Instance.ServiceWidth = Convert.ToDouble(textBox_service_width.Text);
                 Settings.Instance.DragScroll = Convert.ToDouble(textBox_dragScroll.Text);
                 Settings.Instance.MinimumHeight = Convert.ToDouble(textBox_minimumHeight.Text);
+                Settings.Instance.EpgBorderLeftSize = Convert.ToDouble(textBox_borderLeftSize.Text);
+                Settings.Instance.EpgBorderTopSize = Convert.ToDouble(textBox_borderTopSize.Text);
+                Settings.Instance.EpgReplacePattern = textBox_replacePattern.Text;
+                Settings.Instance.EpgReplacePatternTitle = textBox_replacePatternTitle.Text;
                 if (checkBox_title_indent.IsChecked == true)
                 {
                     Settings.Instance.EpgTitleIndent = true;
@@ -241,24 +245,12 @@ namespace EpgTimer.Setting
                 Settings.Instance.ReserveRectColorWarning = ((KeyValuePair<string, SolidColorBrush>)comboBox_reserveWarning.SelectedItem).Key;
                 Settings.Instance.TitleColor1 = ((KeyValuePair<string, SolidColorBrush>)comboBox_colorTitle1.SelectedItem).Key;
                 Settings.Instance.TitleColor2 = ((KeyValuePair<string, SolidColorBrush>)comboBox_colorTitle2.SelectedItem).Key;
-                if (checkBox_reserveBackground.IsChecked == true)
-                {
-                    Settings.Instance.ReserveRectBackground = true;
-                }
-                else
-                {
-                    Settings.Instance.ReserveRectBackground = false;
-                }
+                Settings.Instance.ReserveRectFillOpacity = (int)Math.Round(slider_reserveFillOpacity.Value);
+                Settings.Instance.ReserveRectFillWithShadow = checkBox_reserveFillWithShadow.IsChecked == true;
 
-                if (comboBox_font.SelectedItem != null)
-                {
-                    Settings.Instance.FontName = comboBox_font.SelectedItem as string;
-                }
+                Settings.Instance.FontName = comboBox_font.Text;
                 Settings.Instance.FontSize = Convert.ToDouble(textBox_fontSize.Text);
-                if (comboBox_fontTitle.SelectedItem != null)
-                {
-                    Settings.Instance.FontNameTitle = comboBox_fontTitle.SelectedItem as string;
-                }
+                Settings.Instance.FontNameTitle = comboBox_fontTitle.Text;
                 Settings.Instance.FontSizeTitle = Convert.ToDouble(textBox_fontSizeTitle.Text);
                 if (checkBox_fontBoldTitle.IsChecked == true)
                 {
