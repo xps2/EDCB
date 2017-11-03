@@ -24,7 +24,6 @@ namespace EpgTimer
         private RecSettingData recSetting = new RecSettingData();
         private RecSettingData setDefSetting = new RecSettingData();
         private List<TunerSelectInfo> tunerList = new List<TunerSelectInfo>();
-        private CtrlCmdUtil cmd = CommonManager.Instance.CtrlCmd;
 
         private int lastSelectIndex = 0;
         private Dictionary<UInt32, RecSettingData> presetList = new Dictionary<UInt32, RecSettingData>();
@@ -746,17 +745,5 @@ namespace EpgTimer
         }
 
 
-    }
-
-    public class RecSettingViewInverter : IValueConverter
-    {
-        public object Convert(object v, Type t, object p, System.Globalization.CultureInfo c)
-        {
-            return !(v is bool && (bool)v);
-        }
-        public object ConvertBack(object v, Type t, object p, System.Globalization.CultureInfo c)
-        {
-            return !(v is bool && (bool)v);
-        }
     }
 }
